@@ -1,0 +1,49 @@
+#-*- coding:utf-8 -*-
+
+import os 
+os.chdir('f:/Documents/PythonWork/WebScraping/SLDTNewsTitle')
+
+import pandas as pd
+import re
+import jieba
+from wordcloud import WordCloud,STOPWORDS,ImageColorGenerator
+import matplotlib.pyplot as plt
+import chardet
+
+dateList=[]
+titleList=[]
+
+f=open('SLDTNews.txt')
+
+for line in f:
+    #print chardet.detect(line)['encoding']
+    #print line.decode('GB2312')
+    dateStr='2016-'+line[1:6]
+    dateList.append(dateStr)
+    titleList.append(line[7:])
+f.close()
+
+newsTitle=pd.DataFrame({'date':dateList,'title':titleList})
+newsTitle['date']=pd.to_datetime(newsTitle['date'])
+newsTitle=newsTitle.set_index('date')
+
+jieba.load_userdict('dict.txt')
+text=''
+for titleStr in newsTitle['title']:
+    titleStr=re.sub('[0-9]+',' ',titleStr)
+    titleStr=re.sub('\(.+?\)','',titleStr)
+    segTitleStr=jieba.cut(titleStr)
+    text=text+' '+' '.join(segTitleStr)
+
+backgroudImage = plt.imread('Logo.jpg')
+wc = WordCloud( background_color = 'black',mask = backgroudImage,max_words = 2000,stopwords = STOPWORDS,max_font_size = 50,font_path = 'C:/Windows/Fonts/FZYTK.TTF',random_state = 40)
+
+wc.generate(text)
+imageColors = ImageColorGenerator(backgroudImage)
+#wc.recolor(color_func = imageColors)
+plt.imshow(wc)
+plt.axis('off')
+plt.show()
+
+t=newsTitle.resample('M',kind='period')
+t.apply(len)
